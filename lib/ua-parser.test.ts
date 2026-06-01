@@ -604,4 +604,20 @@ describe("parseUA", () => {
       inBcd: undefined,
     });
   });
+
+  it("WebView HarmonyOS (6.1, Chrome 132)", () => {
+    assert.deepEqual(
+      parseUA(
+        "Mozilla/5.0 (PC; OpenHarmony 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36  ArkWeb/6.1.0.123",
+        browsers,
+      ),
+      {
+        browser: {id: "webview_harmonyos", name: "WebView on HarmonyOS"},
+        version: "132",
+        fullVersion: "132.0.0.0",
+        os: {name: "OpenHarmony", version: "6.1"},
+        inBcd: true,
+      },
+    );
+  });
 });

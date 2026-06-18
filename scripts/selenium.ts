@@ -1,11 +1,3 @@
-//
-// mdn-bcd-collector: scripts/selenium.ts
-// Script to collect results from various browsers using Selenium webdriver
-//
-// © Gooborg Studios, Google LLC
-// See the LICENSE file for copyright details
-//
-
 import path from "node:path";
 
 import {
@@ -662,7 +654,7 @@ const run = async (
     log(task, "Exporting results...");
     await goToPage(driver, browser, version, `${host}/export`);
     const downloadEl = await driver.findElement(By.id("download"));
-    const downloadUrl = await downloadEl.getAttribute("href");
+    const downloadUrl = (await downloadEl.getAttribute("href")) || "";
 
     if (!ctx.testenv) {
       const filename = path.basename(new URL(downloadUrl).pathname);

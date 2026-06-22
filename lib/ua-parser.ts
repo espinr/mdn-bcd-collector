@@ -66,7 +66,7 @@ const parseUA = (userAgent: string, browsers: Browsers): ParsedUserAgent => {
       const chromeMatch = userAgent.match(/Chrome\/([\d.]+)/i);
       const arkMatch = userAgent.match(/ArkWeb\/([\d.]+)/i);
       const huaweiMatch = userAgent.match(/HuaweiBrowser\/([\d.]+)/i);
-      const preferredIds = [];
+      const preferredIds: string[] = [];
 
       if (
         /huawei\s*browser/i.test(ua.browser.name) ||

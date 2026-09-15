@@ -597,44 +597,45 @@ describe("parseUA", () => {
     });
   });
 
-  it("WebView HarmonyOS (6.1, Chrome 132)", () => {
+  // The HarmonyOS user agents below rely on ua-parser-js recognizing the
+  // `ArkWeb/` and `HuaweiBrowser/` tokens (a local ua-parser-js fork until
+  // the change is released upstream). No vendor-specific handling is needed
+  // here: the generic path derives the id from the browser name
+  // ("ArkWeb" -> "arkweb", "Huawei Browser" -> "huawei_browser"), and when
+  // the id is missing from BCD the result is simply "not in BCD"
+  // (inBcd undefined) instead of falling back to an unrelated entry such as
+  // webview_android. Note that fullVersion is computed before the inBcd
+  // check, so these cases also assert the version precedence: the
+  // ArkWeb/HuaweiBrowser token wins over the Chrome token (which reports
+  // the underlying Chromium version).
+  it("ArkWeb on OpenHarmony (not in BCD)", () => {
     assert.deepEqual(
       parseUA(
         "Mozilla/5.0 (PC; OpenHarmony 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36  ArkWeb/6.1.0.123",
         browsers,
       ),
       {
-        browser: {id: "webview_harmonyos", name: "WebView on HarmonyOS"},
-        version: "132",
-        fullVersion: "132.0.0.0",
+        browser: {id: "arkweb", name: "ArkWeb"},
+        version: "6.1",
+        fullVersion: "6.1.0.123",
         os: {name: "OpenHarmony", version: "6.1"},
-        inBcd: true,
+        inBcd: undefined,
       },
     );
   });
 
-  it("Huawei Browser on HarmonyOS", () => {
+  it("Huawei Browser on OpenHarmony (not in BCD)", () => {
     assert.deepEqual(
       parseUA(
-        "Mozilla/5.0 (PC; OpenHarmony 6.1; Windows NT 10.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 ArkWeb/6.1.0.105 HuaweiBrowser/6.1.1.341",
-        {
-          ...browsers,
-          huaweibrowser_harmonyos: {
-            name: "Huawei Browser",
-            releases: {"5.0": {}, "6.0": {}, "7.0": {}},
-          },
-          webview_openharmony: {
-            name: "WebView on OpenHarmony",
-            releases: {"5.0": {}, "6.0": {}, "7.0": {}},
-          },
-        },
+        "Mozilla/5.0 (PC; OpenHarmony 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36  ArkWeb/6.1.0.105 HuaweiBrowser/6.1.1.341",
+        browsers,
       ),
       {
-        browser: {id: "huaweibrowser_harmonyos", name: "Huawei Browser"},
-        version: "6.0",
+        browser: {id: "huawei_browser", name: "Huawei Browser"},
+        version: "6.1",
         fullVersion: "6.1.1.341",
         os: {name: "OpenHarmony", version: "6.1"},
-        inBcd: true,
+        inBcd: undefined,
       },
     );
   });

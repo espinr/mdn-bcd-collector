@@ -1,4 +1,5 @@
 import path from "node:path";
+import {styleText} from "node:util";
 
 import {
   Browser,
@@ -15,10 +16,8 @@ import bcd from "@mdn/browser-compat-data" with {type: "json"};
 
 const bcdBrowsers = bcd.browsers;
 import {compare as compareVersions} from "compare-versions";
-import fetch from "node-fetch";
 import esMain from "es-main";
 import fs from "fs-extra";
-import chalk from "chalk-template";
 import {Listr, ListrTask, ListrTaskWrapper} from "listr2";
 import yargs from "yargs";
 import {hideBin} from "yargs/helpers";
@@ -118,6 +117,10 @@ const earliestBrowserVersions = {
   edge: "12",
   firefox: "4",
   safari: "5.1",
+  // Only collect recent mobile browsers for now
+  chrome_android: "150",
+  firefox_android: "150",
+  safari_ios: "26.5",
 };
 
 /**
@@ -179,6 +182,9 @@ const getBrowsersToTest = (
     edge: filterVersions("edge", since, reverse),
     firefox: filterVersions("firefox", since, reverse),
     safari: filterVersions("safari", since, reverse),
+    chrome_android: filterVersions("chrome_android", since, reverse),
+    firefox_android: filterVersions("firefox_android", since, reverse),
+    safari_ios: filterVersions("safari_ios", since, reverse),
   };
 
   if (limitBrowsers) {
@@ -223,11 +229,12 @@ const getSafariOS = (version: string): string | undefined => {
  * @throws {Error} - If the provided OS is unknown or unsupported.
  */
 const getOsesToTest = (service: string, os: string): [string, string][] => {
-  let osesToTest: [string, string][] = [];
+  let osesToTest: [string, string][];
 
   switch (os) {
     case "Windows":
       osesToTest = [
+        ["Windows", "11"],
         ["Windows", "10"],
         ["Windows", "8.1"],
         ["Windows", "8"],
@@ -258,6 +265,7 @@ const getOsesToTest = (service: string, os: string): [string, string][] => {
         default:
           // BrowserStack
           osesToTest = [
+            ["OS X", "Tahoe"],
             ["OS X", "Sequoia"],
             ["OS X", "Sonoma"],
             ["OS X", "Ventura"],
@@ -267,6 +275,12 @@ const getOsesToTest = (service: string, os: string): [string, string][] => {
             ["OS X", "El Capitan"],
           ];
       }
+      break;
+    case "Android":
+      osesToTest = [["Android", "17"]];
+      break;
+    case "iOS":
+      osesToTest = [["iOS", "26.5"]];
       break;
     default:
       throw new Error(`Unknown/unsupported OS: ${os}`);
@@ -370,7 +384,12 @@ const buildDriver = async (
       capabilities.set("build", commonConfig.build);
       capabilities.set("project", commonConfig.project);
 
-      capabilities.set(Capability.BROWSER_NAME, Browser[browser.toUpperCase()]);
+      const webdriverBrowserName = browser
+        .replace("_android", "")
+        .replace("_ios", "")
+        .toUpperCase();
+
+      capabilities.set(Capability.BROWSER_NAME, Browser[webdriverBrowserName]);
       capabilities.set(Capability.BROWSER_VERSION, version.split(".")[0]);
 
       if (service === "browserstack") {
@@ -378,6 +397,16 @@ const buildDriver = async (
         if (browser !== "safari") {
           osCaps.osVersion = osVersion;
         }
+        if (os === "Android") {
+          osCaps.deviceName = "Pixel 9";
+          osCaps.realMobile = true;
+        }
+
+        if (os === "iOS") {
+          osCaps.deviceName = "iPhone 17 Pro";
+          osCaps.realMobile = true;
+        }
+
         capabilities.set("bstack:options", osCaps);
       } else {
         // Remap target OS for Safari x.0 vs. x.1 on SauceLabs
@@ -452,6 +481,7 @@ const buildDriver = async (
         const driverBuilder = new Builder()
           .usingServer(seleniumUrl)
           .withCapabilities(capabilities);
+        // console.log(capabilities);
         const driver = await driverBuilder.build();
 
         return {driver, service, osName, osVersion};
@@ -639,6 +669,7 @@ const run = async (
       if ((e as Error).name == "TimeoutError") {
         throw new Error(
           task.title + " - " + "Timed out waiting for results to upload",
+          {cause: e},
         );
       }
 
@@ -659,8 +690,8 @@ const run = async (
     if (!ctx.testenv) {
       const filename = path.basename(new URL(downloadUrl).pathname);
       log(task, `Downloading ${filename} ...`);
-      const report = await (await fetch(downloadUrl)).buffer();
-      await fs.writeFile(path.join(RESULTS_DIR, filename), report);
+      const report = await (await fetch(downloadUrl)).arrayBuffer();
+      await fs.writeFile(path.join(RESULTS_DIR, filename), Buffer.from(report));
     }
   } finally {
     driver.quit().catch(() => {});
@@ -685,13 +716,18 @@ const runAll = async (
 ) => {
   if (!Object.keys(secrets.selenium).length) {
     console.error(
-      chalk`{red.bold A Selenium remote WebDriver URL is not defined in secrets.json.  Please define your Selenium remote(s).}`,
+      styleText(
+        ["red", "bold"],
+        "A Selenium remote WebDriver URL is not defined in secrets.json. Please define your Selenium remote(s).",
+      ),
     );
     return false;
   }
 
   if (testenv) {
-    console.warn(chalk`{yellow.bold Test mode: results are not saved.}`);
+    console.warn(
+      styleText(["yellow", "bold"], "Test mode: results are not saved."),
+    );
   }
 
   const browsersToTest = getBrowsersToTest(
@@ -707,19 +743,29 @@ const runAll = async (
   ][]) {
     const browsertasks: ListrTask[] = [];
 
+    const browserOsMap = {
+      chrome: ["macOS", "Windows"],
+      chrome_android: ["Android"],
+      edge: ["macOS", "Windows"],
+      firefox: ["macOS", "Windows"],
+      firefox_android: ["Android"],
+      safari_ios: ["iOS"],
+      safari: ["macOS"],
+    };
+
     for (const version of versions) {
       for (const os of oses) {
+        const supportedOs = browserOsMap[browser];
+        if (supportedOs && !supportedOs.includes(os)) {
+          continue;
+        }
+
+        // Don't test EdgeHTML on macOS
         if (
           os === "macOS" &&
           browser === "edge" &&
           compareVersions(version, "18", "<=")
         ) {
-          // Don't test EdgeHTML on macOS
-          continue;
-        }
-
-        if (os === "Windows" && browser === "safari") {
-          // Don't test Safari on Windows
           continue;
         }
 
@@ -774,21 +820,29 @@ if (esMain(import.meta)) {
           describe: "Limit the browser(s) to test",
           alias: "b",
           type: "string",
-          choices: ["chrome", "edge", "firefox", "safari"],
+          choices: [
+            "chrome",
+            "edge",
+            "firefox",
+            "safari",
+            "chrome_android",
+            "firefox_android",
+            "safari_ios",
+          ],
         })
         .option("since", {
           describe: "Limit to browser releases from this year on",
           alias: "s",
           type: "string",
-          default: "2020",
+          default: "2023",
           nargs: 1,
         })
         .option("os", {
           describe: "Specify OS to test",
           alias: "o",
           type: "array",
-          choices: ["Windows", "macOS"],
-          default: ["Windows", "macOS"],
+          choices: ["Windows", "macOS", "Android", "iOS"],
+          default: ["Windows", "macOS", "Android", "iOS"],
         })
         .option("concurrent", {
           describe: "Define the number of concurrent jobs to run",

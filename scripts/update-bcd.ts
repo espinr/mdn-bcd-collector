@@ -24,10 +24,8 @@ import {
 import assert from "node:assert";
 import path from "node:path";
 
-import {
-  compare as compareVersions,
-  compareVersions as compareVersionsSort,
-} from "compare-versions";
+import {bcdCompare, bcdCompareSort} from "../lib/bcd-compare.js";
+
 import esMain from "es-main";
 import fs from "fs-extra";
 import {fdir} from "fdir";
@@ -211,6 +209,7 @@ export const getSupportMatrix = (
         )) {
           versionMap.set(browserVersion, null);
         }
+        versionMap.set("preview", null);
         browserMap.set(browser.id, versionMap);
       }
       assert(versionMap.has(version), `${browser.id} ${version} missing`);
@@ -219,7 +218,13 @@ export const getSupportMatrix = (
       // already have (non-null) support information. Combine results to deal
       // with this possibility.
       const combined = combineResults([supported, versionMap.get(version)]);
-      versionMap.set(version, combined);
+      // If "preview" is true, the report is from a preview browser (Nightly,
+      // Canary, TP). In this case, we want to record "preview" in BCD.
+      if (report.preview) {
+        versionMap.set("preview", combined);
+      } else {
+        versionMap.set(version, combined);
+      }
     }
   }
 
@@ -242,7 +247,7 @@ export const getSupportMatrix = (
     } else if (version.includes("+")) {
       // Browser versions from x onwards (inclusive)
       for (const v of versionMap.keys()) {
-        if (compareVersions(version.replace("+", ""), v, "<=")) {
+        if (bcdCompare(version.replace("+", ""), v, "<=")) {
           versionMap.set(v, supported);
         }
       }
@@ -251,8 +256,8 @@ export const getSupportMatrix = (
       const versions = version.split("-");
       for (const v of versionMap.keys()) {
         if (
-          compareVersions(versions[0], v, "<=") &&
-          compareVersions(versions[1], v, ">=")
+          bcdCompare(versions[0], v, "<=") &&
+          bcdCompare(versions[1], v, ">=")
         ) {
           versionMap.set(v, supported);
         }
@@ -274,7 +279,24 @@ export const getSupportMatrix = (
 export const inferSupportStatements = (
   versionMap: BrowserSupportMap,
 ): SimpleSupportStatement[] => {
-  const versions = Array.from(versionMap.keys()).sort(compareVersionsSort);
+  // Feature unsupported in all released versions but supported in preview.
+  const previewSupport = versionMap.get("preview");
+
+  const releasedVersions = Array.from(versionMap.entries()).filter(
+    ([version]) => version !== "preview",
+  );
+
+  const hasReleasedSupport = releasedVersions.some(
+    ([, support]) => support === true,
+  );
+
+  if (previewSupport === true && !hasReleasedSupport) {
+    return [{version_added: "preview"}];
+  }
+
+  const versions = Array.from(versionMap.keys())
+    .filter((v) => v !== "preview")
+    .sort(bcdCompareSort);
 
   const statements: SimpleSupportStatement[] = [];
   const lastKnown: {version: string; support: TestResultValue} = {
@@ -676,8 +698,8 @@ const skipReleaseMismatch = (releaseFilter: string | false) => {
           "",
         );
         if (
-          compareVersions(inferredAdded, releaseFilterMatch[1], "<") ||
-          compareVersions(inferredAdded, releaseFilterMatch[2], ">")
+          bcdCompare(inferredAdded, releaseFilterMatch[1], "<") ||
+          bcdCompare(inferredAdded, releaseFilterMatch[2], ">")
         ) {
           return reason(
             ({browser, path}) =>
@@ -691,8 +713,8 @@ const skipReleaseMismatch = (releaseFilter: string | false) => {
             "",
           );
           if (
-            compareVersions(inferredRemoved, releaseFilterMatch[1], "<") ||
-            compareVersions(inferredRemoved, releaseFilterMatch[2], ">")
+            bcdCompare(inferredRemoved, releaseFilterMatch[1], "<") ||
+            bcdCompare(inferredRemoved, releaseFilterMatch[2], ">")
           ) {
             return reason(
               ({browser, path}) =>
@@ -792,12 +814,11 @@ const skipCurrentBeforeSupport = skip("currentBeforeSupport", ({
       .filter(([, result]) => result !== null)
       .reduceRight(
         (latest, [version]) =>
-          !latest || compareVersions(version, latest, ">") ? version : latest,
+          !latest || bcdCompare(version, latest, ">") ? version : latest,
         "",
       );
     if (
-      simpleStatement.version_added === "preview" ||
-      compareVersions(
+      bcdCompare(
         latestNonNullVersion,
         simpleStatement.version_added.replace("≤", ""),
         "<",
@@ -829,16 +850,19 @@ const isSupported = (
     }
 
     if (version_added === "preview") {
+      if (version === "preview") {
+        return true;
+      }
       return false;
     }
 
     if (
       version_added &&
-      compareVersions(version, version_added.replace("≤", ""), ">=")
+      bcdCompare(version, version_added.replace("≤", ""), ">=")
     ) {
       if (
         version_removed &&
-        compareVersions(version, version_removed.replace("≤", ""), ">=")
+        bcdCompare(version, version_removed.replace("≤", ""), ">=")
       ) {
         continue;
       }
@@ -891,8 +915,8 @@ const persistInferredRange = provideStatements(
       const simpleAdded = simpleStatement.version_added.replace("≤", "");
       if (
         simpleStatement.version_added === "preview" ||
-        compareVersions(simpleAdded, lower, "<=") ||
-        compareVersions(simpleAdded, upper, ">")
+        bcdCompare(simpleAdded, lower, "<=") ||
+        bcdCompare(simpleAdded, upper, ">")
       ) {
         simpleStatement.version_added = inferredStatement.version_added;
         return [
@@ -1261,7 +1285,7 @@ export const update = (
   return updates;
 };
 
-/* c8 ignore start */
+/* node:coverage disable */
 /**
  * Loads JSON files from the specified paths and returns them as a single object.
  * @param paths - An array of paths to the JSON files or directories containing JSON files.
@@ -1447,4 +1471,4 @@ if (esMain(import.meta)) {
     argv.verbose,
   );
 }
-/* c8 ignore stop */
+/* node:coverage enable */

@@ -222,6 +222,13 @@
       "__values": ["auto", "optimizeSpeed", "optimizeQuality"]
     },
     "column-progression": {},
+    "column-rule-color": {
+      "__additional_values": {
+        "multiple_colors": "red, blue",
+        "repeat": "repeat(2, red)",
+        "repeat_auto": "repeat(auto, red)"
+      }
+    },
     "contain-intrinsic-size": {
       "__additional_values": {
         "auto_none": "auto none"
@@ -325,7 +332,6 @@
       }
     },
     "grid-template-columns": {
-      "__values": ["masonry"],
       "__additional_values": {
         "fit-content": "fit-content(40%)",
         "minmax": "minmax(100px, 1fr)",
@@ -333,7 +339,6 @@
       }
     },
     "grid-template-rows": {
-      "__values": ["masonry"],
       "__additional_values": {
         "fit-content": "fit-content(40%)",
         "minmax": "minmax(100px, 1fr)",
@@ -987,7 +992,22 @@
       "value": "attr(content)",
       "additionalValues": {
         "fallback": "attr(content, 'default')",
-        "type-or-unit": "attr(content string)"
+        "raw-string": "attr(content raw-string)",
+        "type_function": "attr(x type(<string>))",
+        "type_function.angle": "attr(x type(<angle>))",
+        "type_function.color": "attr(x type(<color>))",
+        "type_function.custom-ident": "attr(x type(<custom-ident>))",
+        "type_function.ident": "attr(x type(foo))",
+        "type_function.image": "attr(x type(<image>))",
+        "type_function.integer": "attr(x type(<integer>))",
+        "type_function.length": "attr(x type(<length>))",
+        "type_function.length-percentage": "attr(x type(<length-percentage>))",
+        "type_function.number": "attr(x type(<number>))",
+        "type_function.percentage": "attr(x type(<percentage>))",
+        "type_function.resolution": "attr(x type(<resolution>))",
+        "type_function.string": "attr(x type(<string>))",
+        "type_function.time": "attr(x type(<time>))",
+        "type_function.transform-function": "attr(x type(<transform-function>))"
       }
     },
     "basic-shape": {
@@ -1041,6 +1061,7 @@
         "contrast-color": "contrast-color(wheat)",
         "currentcolor": "currentcolor",
         "hsl": "hsl(150, 30%, 60%)",
+        "hsla": "hsla(150, 30%, 60%, 0.5)",
         "hwb": "hwb(12, 50%, 0%)",
         "lab": "lab(50%, 40, 59.5)",
         "lch": "lch(52.2%, 72.2, 50)",
@@ -1145,6 +1166,17 @@
       "syntax": "<frequency>",
       "property": "voice-pitch",
       "value": "100Hz"
+    },
+    "global_keywords": {
+      "property": "color",
+      "additionalValues": {
+        "inherit": "inherit",
+        "initial": "initial",
+        "revert": "revert",
+        "revert-layer": "revert-layer",
+        "revert-rule": "revert-rule",
+        "unset": "unset"
+      }
     },
     "hypot": {
       "syntax": "<hypot()>",
@@ -1255,7 +1287,10 @@
     "ratio": {
       "syntax": "<ratio>",
       "property": "aspect-ratio",
-      "value": "16 / 9"
+      "value": "16 / 9",
+      "additionalValues": {
+        "number_value": "1.5"
+      }
     },
     "random": {
       "syntax": "<random()>",
@@ -1266,6 +1301,11 @@
         "element-shared": "random(element-shared, 10px, 20px)",
         "dashed-ident": "random(--my-seed, 10px, 20px)"
       }
+    },
+    "random-item": {
+      "syntax": "<random-item()>",
+      "property": "width",
+      "value": "random-item(auto, 100px, 200px)"
     },
     "ray": {
       "syntax": "<ray()>",

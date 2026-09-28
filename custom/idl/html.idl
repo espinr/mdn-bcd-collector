@@ -113,10 +113,6 @@ partial interface HTMLElement {
   attribute HTMLMenuElement? contextMenu;
 };
 
-partial interface HTMLFrameSetElement {
-  attribute EventHandler onorientationchange;
-};
-
 partial interface HTMLInputElement {
   // https://github.com/whatwg/html/issues/667
   attribute boolean incremental;
@@ -214,7 +210,6 @@ partial interface Window {
   undefined scrollByPages();
   undefined scrollMaxX();
   undefined scrollMaxY();
-  undefined setResizable();
   undefined sizeToContent();
   undefined updateCommands();
 
@@ -225,12 +220,6 @@ partial interface Window {
 partial interface WorkerGlobalScope {
   // https://developer.mozilla.org/en-US/docs/Web/API/WorkerGlobalScope/dump
   undefined dump(any... data);
-};
-
-// Non-standard addition in Gecko
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1478208
-partial interface HTMLMediaElement {
-  readonly attribute boolean allowedToPlay;
 };
 
 // Non-standard

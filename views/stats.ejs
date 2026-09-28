@@ -1,0 +1,70 @@
+<%- contentFor('body') %>
+
+<h1>Statistics</h1>
+<p style="text-align: center;">
+  <strong>Collector</strong>: v<%- appVersion %> <br>
+  <strong>BCD</strong>: v<%- bcdVersion %>
+</p>
+
+
+<div class="paper">
+  <h2>How many existing BCD keys are covered by the Collector?</h2>
+
+  <ul>
+    <li>Total keys in BCD: <%-coverageData.bcd.summary.all_keys_count%></li>
+
+    <li>BCD keys covered by the Collector: <%-coverageData.bcd.summary.covered_keys_count%> (<strong><%-(coverageData.bcd.summary.covered_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>BCD keys not covered by the Collector: <%-coverageData.bcd.summary.not_covered_keys_count%> (<strong><%-(coverageData.bcd.summary.not_covered_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>BCD keys testable in the Collector: <%-coverageData.bcd.summary.testable_keys_count%> (<strong><%-(coverageData.bcd.summary.testable_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>BCD keys marked <a href="https://github.com/openwebdocs/mdn-bcd-collector/blob/main/untestable-features.jsonc">not testable</a> in the Collector: <%-coverageData.bcd.summary.not_testable_keys_count%> (<strong><%-(coverageData.bcd.summary.not_testable_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>Collector coverage of testable BCD keys: <%-coverageData.bcd.summary.testable_covered_keys_count%> (<strong><%-(coverageData.bcd.summary.testable_covered_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>Testable BCD keys not covered in the Collector: <%-coverageData.bcd.summary.testable_not_covered_keys_count%> (<strong><%-(coverageData.bcd.summary.testable_not_covered_keys_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+  </ul>
+
+  <p> List of <strong><%-coverageData.bcd.summary.testable_not_covered_keys_count%></strong> BCD keys not covered in the Collector (either need to be marked as untestable, or a collector test needs to written):</p>
+  <details>
+    <ol>
+    <% for (item of coverageData.bcd.lists.testable_not_covered_keys) { %>
+      <li><%- item %></li>
+    <% } %>
+    </ol>
+  </details>
+</div>
+
+<div class="paper">
+  <h2>How many BCD keys are in the Collector but not in BCD?</h2>
+
+  <ul>
+    <li>Total keys in the Collector: <%-coverageData.collector.summary.all_keys_count%></li>
+    
+    <li>Collector keys in BCD: <%-coverageData.collector.summary.keys_in_bcd_count%> (<strong><%-(coverageData.collector.summary.keys_in_bcd_ratio * 100).toFixed(2)%>%</strong>)</li>
+    
+    <li>Collector keys not in BCD: <%-coverageData.collector.summary.keys_not_in_bcd_count%> (<strong><%-(coverageData.collector.summary.keys_not_in_bcd_ratio * 100).toFixed(2)%>%</strong>)</li>
+  </ul>
+
+  <p>List of <strong><%-coverageData.collector.summary.keys_not_in_bcd_count%></strong> Collector keys not in BCD: (need to test for support, might not be supported anywhere, meaning the keys are still <a href="https://ddbeck.com/notes/spec-fiction/">"spec fiction"</a>)</p>
+  <details>
+    <ol>
+    <% for (item of coverageData.collector.lists.keys_not_in_bcd) { %>
+      <li><%- item %></li>
+    <% } %>
+    </ol>
+  </details>
+
+  <p>Note: If a new key is not in the in the Collector, it can have a variety of reasons:</p>
+
+  <ul>
+    <li>The feature is not defined in a specification that is registered in <a href="https://github.com/w3c/browser-specs">w3c/browser-specs</a>. Maybe it is just part of an explainer or an open PR against an existing specification.</li>
+    <li>The specification is not marked with <code>standing: good</code>.</li>
+    <li>The <a href="https://github.com/w3c/reffy">w3c/reffy</a> crawler did not recognize the feature from the specification text.</li>
+    <li>The latest version of <a href="https://github.com/w3c/webref">w3c/webref</a> does not include the feature yet.</li>
+    <li>The Collector has not been updated to the latest webref version yet.</li>
+    <li>The Collector has no support for discovering this kind of feature yet. (for example, the list of HTML elements and their attributes is currently not picked up automatically from webref; instead it is maintained manually).</li>
+  </ul>
+</div>

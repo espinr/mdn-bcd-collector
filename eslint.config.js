@@ -23,7 +23,6 @@ const staticCompat = new FlatCompat({
 export default [
   {
     ignores: [
-      "**/coverage/",
       "**/generated/",
       "**/browser-compat-data/",
       "**/es-scraper/",
@@ -48,7 +47,6 @@ export default [
 
     languageOptions: {
       globals: {
-        ...globals.mocha,
         ...globals.node,
       },
 
@@ -165,7 +163,6 @@ export default [
       ecmaVersion: 2022,
       globals: {
         ...globals.browser,
-        ...globals.mocha,
       },
     },
   },

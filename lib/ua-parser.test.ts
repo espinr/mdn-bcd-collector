@@ -35,6 +35,10 @@ const browsers = {
     name: "WebView Android",
     releases: {1.1: {}, 4.4: {}, "4.4.3": {}, 37: {}, 86: {}},
   },
+  webview_openharmony: {
+    name: "WebView OpenHarmony",
+    releases: {"4.0": {}, "5.0": {}, "6.0": {}, "7.0": {}},
+  },
 };
 
 describe("getMajorMinorVersion", () => {
@@ -596,5 +600,69 @@ describe("parseUA", () => {
       os: {name: "", version: ""},
       inBcd: undefined,
     });
+  });
+
+  it("OpenHarmony WebView PC 6.1.0.123", () => {
+    assert.deepEqual(
+      parseUA(
+        "Mozilla/5.0 (PC; OpenHarmony 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 ArkWeb/6.1.0.123",
+        browsers,
+      ),
+      {
+        browser: {id: "webview_openharmony", name: "WebView OpenHarmony"},
+        version: "6.0",
+        fullVersion: "6.1.0.123",
+        os: {name: "OpenHarmony", version: "6.1"},
+        inBcd: true,
+      },
+    );
+  });
+
+  it("OpenHarmony WebView Phone 4.1.6.1", () => {
+    assert.deepEqual(
+      parseUA(
+        "Mozilla/5.0 (Phone; OpenHarmony 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 ArkWeb/4.1.6.1 Mobile",
+        browsers,
+      ),
+      {
+        browser: {id: "webview_openharmony", name: "WebView OpenHarmony"},
+        version: "4.0",
+        fullVersion: "4.1.6.1",
+        os: {name: "OpenHarmony", version: "5.0"},
+        inBcd: true,
+      },
+    );
+  });
+
+  it("OpenHarmony WebView Wearable 6.0.0.112", () => {
+    assert.deepEqual(
+      parseUA(
+        "Mozilla/5.0 (Wearable; OpenHarmony 6.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36 ArkWeb/6.0.0.112",
+        browsers,
+      ),
+      {
+        browser: {id: "webview_openharmony", name: "WebView OpenHarmony"},
+        version: "6.0",
+        fullVersion: "6.0.0.112",
+        os: {name: "OpenHarmony", version: "6.0"},
+        inBcd: true,
+      },
+    );
+  });
+
+  it("OpenHarmony WebView Tablet 4.1.6.1", () => {
+    assert.deepEqual(
+      parseUA(
+        "Mozilla/5.0 (Tablet; OpenHarmony 5.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 ArkWeb/4.1.6.1",
+        browsers,
+      ),
+      {
+        browser: {id: "webview_openharmony", name: "WebView OpenHarmony"},
+        version: "4.0",
+        fullVersion: "4.1.6.1",
+        os: {name: "OpenHarmony", version: "5.0"},
+        inBcd: true,
+      },
+    );
   });
 });

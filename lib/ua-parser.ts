@@ -80,7 +80,10 @@ const parseUA = (userAgent: string, browsers: Browsers): ParsedUserAgent => {
   }
 
   const os = data.os.name.toLowerCase();
-  if (os === "android" && data.browser.id !== "oculus") {
+  if (ua.engine.name === "ArkWeb" && os === "openharmony") {
+    data.browser = {id: "webview_openharmony", name: "WebView OpenHarmony"};
+    data.fullVersion = ua.engine.version || "0";
+  } else if (os === "android" && data.browser.id !== "oculus") {
     data.browser.id += "_android";
     data.browser.name += " Android";
 
@@ -105,7 +108,9 @@ const parseUA = (userAgent: string, browsers: Browsers): ParsedUserAgent => {
 
   data.fullVersion = data.fullVersion || ua.browser.version || "0";
 
-  if (RUNTIME_IDS_WITH_PATCH_VERSIONING.has(data.browser.id)) {
+  if (data.browser.id === "webview_openharmony") {
+    data.version = `${getMajorVersion(data.fullVersion)}.0`;
+  } else if (RUNTIME_IDS_WITH_PATCH_VERSIONING.has(data.browser.id)) {
     data.version = data.fullVersion;
   } else {
     data.version = getMajorMinorVersion(data.fullVersion);
